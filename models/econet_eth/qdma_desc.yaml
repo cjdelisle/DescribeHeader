@@ -1,0 +1,66 @@
+# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+#
+# This is part of the EcoNet Ethernet driver
+# It is the data structure of a Packet Descriptor which is used in the QDMA ring
+# for the driver. See: https://github.com/cjdelisle/econet_eth
+#
+type: struct
+name: qdma_desc
+short_name: desc
+desc: QDMA Packet Descriptor
+fields:
+  - type: word
+    name: unknown0
+    desc: Reserved / unused, we still export the symbol so we can show it in debugging
+    bits: 32
+  - type: bitfield
+    bits: 16
+    fields:
+      - name: done
+        bits: 1
+        desc: Descriptor Done flag, this roughly means that the DSCP "belongs to the driver",
+              the hardware will set it when it is done receiving or sending and will check to
+              make sure it's not touching a DSCP that is not meant for it. This is not strictly
+              necessary, you can determine which packets are yours only through ring indexes and
+              the TX Done List, and setting and checking of this flag can be deactivated.
+      - name: dropped
+        bits: 1
+        desc: Packet has been dropped
+      - name: nls
+        bits: 1
+        desc: Unknown meaning but used on EN761627 and EN7580
+      - desc: Reserved / unused, we still export the symbol so we can show it in debugging
+        name: unknown1
+        bits: 13
+  - type: word
+    name: pkt_len
+    bits: 16
+    desc: Length of the packet in bytes
+  - name: pkt_addr
+    type: word
+    bits: 32
+    desc: Physical (DMA) address of the packet
+  - type: bitfield
+    bits: 32
+    fields:
+      - desc: Reserved / unused, we still export the symbol so we can show it in debugging
+        name: unknown2
+        bits: 20
+      - name: next_idx
+        desc: Index of the next descriptor in the ring.
+        bits: 12
+  - type: union
+    name: t
+    desc: This is either Ethernet RX, Ethernet TX, xPON RX, or xPON TX
+    fields:
+      - type: opaque
+        bytes: 16
+        decl: struct qdma_desc_erx erx;
+      - type: opaque
+        bytes: 8
+        decl: struct qdma_desc_etx etx;
+      - type: opaque
+        bytes: 16
+        decl: u32 raw[4];
+
+    

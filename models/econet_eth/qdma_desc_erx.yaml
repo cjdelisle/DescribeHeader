@@ -1,0 +1,68 @@
+# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+#
+# This is part of the EcoNet Ethernet driver
+# It is one of the four possible values ot the `t` field in qdma_desc.yaml
+# This is what to use when receiving a packet from an Ethernet port
+#
+type: struct
+name: qdma_desc_erx
+short_name: erx
+fields:
+  - type: word
+    bits: 32
+    name: unknown0
+    desc: Unknown / unused field, first word in descriptor
+
+  - type: bitfield
+    bits: 32
+    fields:
+      - name: unknown1
+        bits: 3
+        desc: Revision number? (unused)
+      - name: ip6
+        bits: 1
+        desc: IPv6 packet indicator
+      - name: ip4
+        bits: 1
+        desc: IPv4 packet indicator
+      - name: ip4f
+        bits: 1
+        desc: IPv4 fragment flag
+      - name: tack
+        bits: 1
+        desc: TCP ACK flag
+      - name: l2vld
+        bits: 1
+        desc: Layer 2 valid flag
+      - name: l4f
+        bits: 1
+        desc: Layer 4 flag (e.g., checksum failure)
+      - name: sport
+        bits: 4
+        desc: Where the packet came from, mostly unknown / unused, needs testing
+      - name: crsn
+        bits: 5
+        desc: Most likely a MediaTek PPE CPU_REASON
+      - name: ppe_entry
+        bits: 14
+        desc: PPE (Packet Processing Engine) entry index
+
+  - type: bitfield
+    bits: 32
+    fields:
+      - bits: 31
+        name: unknown2
+        desc: Reserved
+      - name: untag
+        bits: 1
+        desc: VLAN untag flag
+
+  - type: word
+    bits: 16
+    name: sp_tag
+    desc: MediaTek "Special Tag" for switch port/VLAN encoding
+
+  - type: word
+    bits: 16
+    name: tci
+    desc: The TCI of any vlan tag that was unpopped beneath the MTK "Special Tag"

@@ -1,0 +1,30 @@
+type: struct
+name: qring
+desc: QDMA Ring Registers
+fields:
+  - type: word
+    bits: 32
+    name: txbase
+    desc: TX descriptor array address
+    typedef: dma_addr_t
+  - type: word
+    bits: 32
+    name: rxbase
+    desc: RX descriptor array address
+    typedef: dma_addr_t
+  - type: word
+    bits: 32
+    name: tx_cpui
+    desc: TX ring CPU (driver) index
+  - type: word
+    bits: 32
+    name: tx_hwi
+    desc: TX ring hardware index
+  - type: word
+    bits: 32
+    name: rx_cpui
+    desc: RX ring CPU (driver) index
+  - type: word
+    bits: 32
+    name: rx_hwi
+    desc: TX ring hardware index

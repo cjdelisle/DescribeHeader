@@ -1,0 +1,75 @@
+# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+#
+# This is part of the EcoNet Ethernet driver
+# It is one of the four possible values ot the `t` field in qdma_desc.yaml
+# This is what to use when sending a packet to an Ethernet port
+#
+type: struct
+name: qdma_desc_etx
+short_name: etx
+fields:
+  - type: bitfield
+    bits: 32
+    fields:
+      - name: unknown0
+        desc: Unused, called "rev" probably short for reserved
+        bits: 4
+      - name: sp_tag
+        bits: 16
+        desc: MediaTek "Special Tag" format which encapsulates both switch port number and possible VLAN
+      - name: oam
+        bits: 1
+        desc: OAM (management) frame, never used with Ethernet transmissions
+      - name: channel
+        bits: 8
+        desc: The channel number for QoS prioritization
+      - name: queue
+        bits: 3
+        desc: The queue number for QoS prioritization
+  - type: bitfield
+    bits: 16
+    fields:
+      - name: ico
+        bits: 1
+        desc: Checksum offload, probably IP
+      - name: uco
+        bits: 1
+        desc: Checksum offload, probably UDP
+      - name: tco
+        bits: 1
+        desc: Checksum offload, probably TCP
+      - name: sco
+        bits: 1
+        desc: Unknown, maybe SCTP checksum offload
+      - name: udf_pmap
+        bits: 6
+        desc: Unknown / unused
+      - name: fport
+        bits: 3
+        desc: Where in the Frame Engine to send the packet to
+          Loopback is immediate loopback, QDMA_LOOPBACK is loopback after QoS reprioritization
+          and QDMA_HW_LOOPBACK is loopback after (I think) hardware forwarding.
+          The most useful values are LAN, WAN, and PPE (Packet Processing Engine).
+        enum:
+          LOOPBACK: 0
+          LAN: 1
+          WAN: 2
+          PPE: 4
+          QDMA_LOOPBACK: 5
+          QDMA_HW_LOOPBACK: 6
+          DROP: 7
+      - name: vlan_en
+        bits: 1
+        desc: If 1 then add a vlan header to the packet
+      - name: vlan_type
+        bits: 2
+        desc: Which type of vlan to add to the packet header
+        enum:
+          "8100": 0
+          "88A8": 1
+          "9100": 2
+          "UNKNOWN": 3
+  - type: word
+    name: vlan_tag
+    bits: 16
+    desc: The VLAN number, if vlan_en is set

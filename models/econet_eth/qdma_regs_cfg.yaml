@@ -1,0 +1,95 @@
+# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+#
+# This is part of the EcoNet Ethernet driver
+# This is the configuration register for each QDMA engine.
+# For the driver. See: https://github.com/cjdelisle/econet_eth
+#
+type: struct
+name: qdma_cfg
+short_name: qcfg
+fields:
+  - type: bitfield
+    bits: 32
+    fields:
+      - name: rx_2b_offset
+        bits: 1
+        desc: If enabled, use (dscp_pkt_ptr + 2) as starting address for rx payload
+      - name: dma_preference
+        short_name: dma_pref
+        bits: 2
+        enum:
+          ROUND_ROBIN: 0
+          FRX_TX1_TX0: 1
+          TX1_FRX_TX0: 2
+          TX1_TX0_FRX: 3
+        desc: DMA channel scheduling preference, FRX means "Forwarding and RX"
+      - name: msg_word_swap
+        bits: 1
+        desc: Enable message word swap, don't know what this does but every implementation
+              sets it on Big Endian.
+      - name: dscp_byte_swap
+        bits: 1
+        desc: Endian-swap packet descriptors (?), drivers always set this on Big Endian machines.
+      - name: payload_byte_sw
+        bits: 1
+        desc: Endian-swap payload bytes, drivers always set this on Big Endian machines.
+      - name: vchnl_map_en
+        bits: 1
+        desc: Enable virtual mapping to group queues per physical channel
+      - name: vchnl_map_mode
+        bits: 1
+        desc: Map of 4 virtual channels per physical channel, 0 = map 2
+      - desc: Reserved
+        bits: 1
+      - name: qdma_lpbk_rxq_sel
+        bits: 1
+        desc: If enabled, qdma loopback goes to queue 1, otherwise it goes to queue zero
+      - name: slm_release_en
+        bits: 1
+        desc: Enable qdma fwd path release slm_block
+      - name: tx_immediate_done
+        bits: 1
+        desc: QDMA generate pkt_done itself instead of using pse pkt_done
+      - name: irq_en
+        bits: 1
+        desc: Enable "interrupt queue" (i.e. Done List) for tx dma done
+      - desc: Reserved
+        bits: 1
+      - name: gdm_loopback
+        bits: 1
+        desc: Enable gdm loopback tx packet to rx path
+      - name: qdma_loopback
+        bits: 1
+        desc: Enable hw qdma loopback tx packet to rx path
+      - desc: Reserved
+        bits: 8
+      - name: check_done
+        bits: 1
+        desc: Check the done bit of descriptor and don't use descriptors which are marked done.
+              If disabled, the QDMA engine will determine if a descriptor is usable based only
+              on the ring pointers.
+      - name: tx_wb_done
+        bits: 1
+        desc: Set the "done" bit in tx descriptor after sending. If disabled then the engine
+              will skip setting the done bit and rely on the driver to check the Done List
+              (i.e. `irq_en`).
+      - name: burst_size
+        bits: 2
+        enum:
+          16_BYTES: 0
+          32_BYTES: 1
+          64_BYTES: 2
+          128_BYTES: 3
+        desc: Number of bytes per DMA burst
+      - name: rx_dma_busy
+        bits: 1
+        desc: RX DMA engine currently busy
+      - name: rx_dma_en
+        bits: 1
+        desc: Enable RX DMA
+      - name: tx_dma_busy
+        bits: 1
+        desc: TX DMA engine currently busy
+      - name: tx_dma_en
+        bits: 1
+        desc: Enable TX DMA

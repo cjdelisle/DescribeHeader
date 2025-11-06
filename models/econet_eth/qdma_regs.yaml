@@ -1,0 +1,36 @@
+# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+#
+# This is part of the EcoNet Ethernet driver
+# It the section of memory mapped registers for one QDMA system.
+# For the driver. See: https://github.com/cjdelisle/econet_eth
+#
+type: struct
+name: qregs
+desc: QDMA Registers
+fields:
+  - type: word
+    name: version
+    bits: 32
+    offset: 0x000
+  - type: opaque
+    name: cfg
+    bytes: 4
+    offset: 0x004
+    decl: struct qdma_cfg cfg;
+  - type: opaque
+    name: qchain0
+    bytes: 24
+    offset: 0x008
+    decl: struct qchain qchain0;
+
+  - type: opaque
+    name: qchain1
+    bytes: 24
+    offset: 0x108
+    decl: struct qchain qchain1;
+
+  - type: word
+    name: end_word
+    offset: 0x18c
+    bits: 32
+  

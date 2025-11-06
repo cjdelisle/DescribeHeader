@@ -1,0 +1,214 @@
+# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+$schema: "https://json-schema.org/draft/2020-12/schema"
+$title: "Register or Struct Field Schema"
+$type: object
+
+# The top-level object itself is a "struct field"
+$defs:
+  # ======================================================
+  # Bit field item (lowest-level)
+  # ======================================================
+  bitFieldItem:
+    type: object
+    properties:
+      name:
+        type: string
+        description: Human-readable name of the field, if missing then this is treated
+                     as a reserved/unknown field and accessors are not generated.
+      short_name:
+        type: string
+        description: "Optional short identifier"
+      desc:
+        type: string
+        description: "Optional description"
+      bits:
+        description: "Bit position or range"
+        type: integer
+      enum:
+        description: "If the number is represented by an enum, these are the values"
+        type: object
+        additionalProperties:
+          type: integer
+    required: [bits]
+    additionalProperties: false
+
+  # ======================================================
+  # Bit field
+  # ======================================================
+  bitField:
+    type: object
+    properties:
+      type:
+        const: bitfield
+      name:
+        type: string
+        description: Human-readable name of the field, if missing then the members of
+                     this bitfield are promoted into members of its parent struct.
+      short_name:
+        type: string
+        description: "Optional short identifier"
+      desc:
+        type: string
+        description: "Optional description"
+      offset:
+        type: integer
+        description: If this field is inside of a struct,
+                     the location in the struct can be specified.
+      bits:
+        type: number
+        enum: [8, 16, 32, 64]
+      fields:
+        type: array
+        description: "Bitfields contained in this word"
+        items:
+          $ref: "#/$defs/bitFieldItem"
+    required: [type, bits, fields]
+    additionalProperties: false
+
+  # ======================================================
+  # Word field
+  # ======================================================
+  wordField:
+    type: object
+    properties:
+      type:
+        const: word
+      name:
+        type: string
+        description: Human-readable name of the field, if missing then this is treated
+                     as a reserved/unknown field and accessors are not generated.
+      short_name:
+        type: string
+        description: "Optional short identifier"
+      desc:
+        type: string
+        description: "Optional description"
+      offset:
+        type: integer
+        description: If this field is inside of a struct,
+                     the location in the struct can be specified.
+      bits:
+        type: number
+        enum: [8, 16, 32, 64]
+      signed:
+        type: boolean
+        description: If an enum is present then it will be range-checked based on the signed
+                     form of this word, if signed is absent then it's assumed unsigned.
+      typedef:
+        type: string
+        description: "If set, this will be the type used when making a structure"
+      enum:
+        description: "If the number is represented by an enum, these are the values"
+        type: object
+        additionalProperties:
+          type: integer
+    required: [type, bits]
+    additionalProperties: false
+
+  # ======================================================
+  # Struct field (contains word/bitfield, nested struct, and array fields)
+  # ======================================================
+  structField:
+    type: object
+    properties:
+      type:
+        const: struct
+      name:
+        type: string
+        description: Human-readable name of the field, if missing then the members of
+                     this struct are promoted into members of its parent struct.
+      short_name:
+        type: string
+        description: "Optional short identifier"
+      desc:
+        type: string
+        description: "Optional description"
+      offset:
+        type: integer
+        description: If this field is inside of a struct,
+                     the location in the struct can be specified.
+      fields:
+        type: array
+        items:
+          oneOf:
+            - $ref: "#/$defs/bitField"
+            - $ref: "#/$defs/wordField"
+            - $ref: "#/$defs/structField"
+            - $ref: "#/$defs/opaqueField"
+            - $ref: "#/$defs/unionField"
+          discriminator:
+            propertyName: type
+    required: [type, fields]
+    additionalProperties: false
+
+  # ======================================================
+  # Opaque field (just has a byte width and typedef for use in C code)
+  # ======================================================
+  opaqueField:
+    type: object
+    properties:
+      type:
+        const: opaque
+      name:
+        type: string
+        description: Human-readable name of the field, only used for documentation.
+                     All code generation uses decl.
+      short_name:
+        type: string
+        description: "Optional short identifier"
+      desc:
+        type: string
+        description: "Optional description"
+      offset:
+        type: integer
+        description: If this field is inside of a struct,
+                     the location in the struct can be specified.
+      bytes:
+        type: integer
+        description: Size of the field
+      decl:
+        type: string
+        description: The declaration used in C code, consisting of both type and name.
+                     For example "struct my_struct elem;" or "u32 words[4];".
+    required: [type, bytes]
+    additionalProperties: false
+
+  # ======================================================
+  # Union field (contains multiple possible items)
+  # ======================================================
+  unionField:
+    type: object
+    properties:
+      type:
+        const: union
+      name:
+        type: string
+        description: Human-readable name of the field
+      short_name:
+        type: string
+        description: "Optional short identifier"
+      desc:
+        type: string
+        description: "Optional description"
+      offset:
+        type: integer
+        description: If this field is inside of a struct,
+                     the location in the struct can be specified.
+      fields:
+        type: array
+        items:
+          oneOf:
+            - $ref: "#/$defs/bitField"
+            - $ref: "#/$defs/wordField"
+            - $ref: "#/$defs/structField"
+            - $ref: "#/$defs/opaqueField"
+          discriminator:
+            propertyName: type
+    required: [type, name, fields]
+    additionalProperties: false
+
+# ======================================================
+# Root schema
+# ======================================================
+oneOf:
+  - $ref: "#/$defs/structField"

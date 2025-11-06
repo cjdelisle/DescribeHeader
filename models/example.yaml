@@ -1,0 +1,97 @@
+# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+#
+# This is an example of the features of DescribeHeader
+# For more detail, please refer to the schema:
+#  - https://github.com/cjdelisle/DescribeHeader/blob/master/lib/schema.yaml
+# It is not 100% exhaustive, but it imposes most of the rules.
+
+# Top level is always a struct
+type: struct
+
+# Name of the struct
+name: example
+
+# short_name will be used in accessor functions to avoid
+# the names of them getting too long. It is optional in every
+# element.
+short_name: ex
+
+# Used in the code comment, this is also optional in every element.
+desc: Example Struct
+
+# Every struct has fields
+#
+# NOTE: Every field must either be less than 32 bits wide, or else be a
+#       multiple of 32 bits wide, and no field may straddle a 32 bit
+#       boundary (even if alignment is not reuired). This is a limitation
+#       of the diagram generator.
+#
+fields:
+  # A word field is a number in the struct
+  - type: word
+    # Valid widths of a word are 8/16/32/64
+    bits: 8
+    name: my_byte
+    short_name: mb
+  # You can make bitfields as well
+  - type: bitfield
+    # You need to specify the total width, valid widths are 8/16/32/64
+    bits: 8
+    # You do NOT need to include a name in a bitfield, if you don't
+    # The accessors will make it look as though the fields are members
+    # of the parent struct
+    #
+    # But fields is mandatory
+    fields:
+      # Bitfield elements do not need a type, but they do need a name
+      - name: enabled
+        # If the bits is 1, then element is a bool, otherwise a u8/u16/u32
+        bits: 1
+      - name: class
+        bits: 2
+        desc: Enum example
+        # If a bitfield element has an enum in it, then it will be treated
+        # as that enum. You can use the short name, it will be rewritten as
+        # EX_CLASS_A using the name of the struct, field name (bitfield is anonymous)
+        # and the name.
+        enum:
+          A: 0
+          B: 1
+          C: 2
+          D: 3
+      - name: count
+        # All field elements must add up to the width of the bitfield
+        bits: 5
+        desc: Simple uint example
+  - type: union
+    # Unions must have a name because they need to be referenced
+    name: un
+    desc: Example of a union, size is that of the largest member
+    # Fields of a union must have a name (or in the case of opaque, decl)
+    fields:
+      # Opaque type lets you do anything
+      - type: opaque
+        # Width is specified in bytes, not bits
+        bytes: 2
+        # decl is how the field will appear in C
+        decl: struct some_other_thing as_external_thing;
+      - type: word
+        bits: 16
+        name: as_word
+      - type: opaque
+        bytes: 2
+        decl: u8 as_bytes[2];
+  - type: opaque
+    # An unnamed opaque or word element is used to designate unused space
+    desc: This is an unused byte
+    bytes: 1
+  - type: word
+    name: byte_7
+    bits: 8
+    # You can specify the byte offset of an element within a struct
+    # In this case, nothing fills bytes 4 or 5 so it will become an "unused"
+    # field. Filling in a nameless opaque or word field may be better because
+    # Then you can add a description which will appear in the comment.
+    offset: 7
+
+    
