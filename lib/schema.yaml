@@ -24,6 +24,10 @@ $defs:
       bits:
         description: "Bit position or range"
         type: integer
+      only:
+        type: string
+        enum: [read, write]
+        description: Indicate if this is a read-only or write-only field.
       enum:
         description: "If the number is represented by an enum, these are the values"
         type: object

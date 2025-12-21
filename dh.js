@@ -6,9 +6,10 @@ import { accessors } from './lib/accessors.js';
 import { prepare } from './lib/prepare.js';
 
 const usage = () => {
-    console.log(`Usage: ./dh.js <model>`);
+    console.log(`Usage: ./dh.js [--packet] <model>`);
     console.log(`Example: ./dh.js ./models/econet_eth/qdma_desc.yaml`);
     console.log();
+    console.log(`    --packet    # This is a packet diagram, otherwise treated as registers`);
 }
 
 const main = () => {
@@ -16,7 +17,11 @@ const main = () => {
     if (process.argv.length < 3) {
         return usage();
     }
-    const file = process.argv[2] || "register.yaml";
+    let type = 'registers';
+    if (process.argv.indexOf('--packet') > -1) {
+        type == 'packet';
+    }
+    const file = process.argv[process.argv.length - 1] || "register.yaml";
 
     let data_s;
     try {
@@ -32,8 +37,10 @@ const main = () => {
         return;
     }
     // console.log(JSON.stringify(data, null, '  '));
-    diagram(data, 'comment');
-    accessors(data);
+    if (type === 'packet') {
+        diagram(data, 'comment');
+    }
+    accessors(data, type === 'registers');
 
 };
 main();
