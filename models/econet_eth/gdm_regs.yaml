@@ -1,0 +1,673 @@
+# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+#
+# This is part of the EcoNet Ethernet driver
+# It the section of memory mapped registers for one GDM port.
+# For the driver. See: https://github.com/cjdelisle/econet_eth
+#
+type: struct
+name: gdm_regs
+short_name: gdm
+desc: GDM Registers
+fields:
+  - type: struct
+    name: vlan
+    desc: VLAN tag control
+    fields:
+      - type: word
+        bits: 16
+        name: tpid
+        short_name: tpid
+        desc: If inserting a MTK Special Tag, this TPID will be used
+      - type: bitfield
+        bits: 16
+        fields:
+          - bits: 14
+          - bits: 1
+            name: untag_rx
+            short_name: urx
+            desc: Untag incoming tagged packets (and put the tag in the DESC)
+          - bits: 1
+            name: tag_tx
+            short_name: ttx
+            desc: Insert MTK Special Tag when sending packets
+  - type: struct
+    name: pppoe
+    desc: PPPoE header control
+    fields:
+      - type: bitfield
+        bits: 16
+        fields:
+          - bits: 15
+          - bits: 1
+            name: tag_tx
+            short_name: ttx
+            desc: Insert PPPoE header on transmitted packets
+      - type: word
+        bits: 16
+        name: pppoe_id
+        short_name: pppid
+        desc: PPPoE Session ID to insert on transmitted packets
+  - type: bitfield
+    bits: 32
+    name: red_drop_criteria
+    short_name: red
+    fields:
+      - bits: 2
+        name: crit_prio
+        short_name: cp
+        desc: Trigger RED packet dropping on
+              1. Rate-limit-violation OR buffer is full
+              2. Rate-limit-violation OR buffer has surpassed threshold
+              3. Rate-limit-violation WHEN buffer is also full
+              4. Rate-limit-violation WHEN buffer has surpassed threshold
+              For critical priority packets (VIP)
+        enum:
+          RL_OR_FULL: 0
+          RL_OR_TH: 1
+          RL_AND_FULL: 2
+          RL_AND_TH: 3
+      - bits: 2
+        name: low_prio
+        short_name: lp
+        desc: Same as crit_prio, for packets classed as low priority by CPU Reason
+      - bits: 2
+        name: high_prio
+        short_name: hp
+        desc: Same as crit_prio, for packets classed as low priority by CPU Reason
+      - bits: 2
+        name: dscp_rxmsg_size
+        short_name: dscp_rxm_sz
+        desc: Size of the msg field within the packet descriptor
+        enum:
+          "4B": 0
+          "8B": 1
+          "16B": 2
+          "32B": 3
+      - bits: 24
+  - type: word
+    bits: 32
+    name: channels_enabled
+    short_name: chan_en
+    desc: Each bit corrisponds to a channel, if one bit is cleared then this GDM will
+          refuse to forward traffic from that channel number.
+  - type: word
+    bits: 32
+    name: cpu_reason_priority_lo
+    short_name: crsn_prio_lo
+    desc: Priority of a packet based on the CPU_REASON for packet being sent to CPU.
+          Each CPU_REASON corrisponds to 2 bits, 00 = crit_prio, 01 = low_prio, 10 = high_prio.
+          This word covers CPU_REASONS 0..15
+  - type: word
+    bits: 32
+    name: cpu_reason_priority_hi
+    short_name: crsn_prio_hi
+    desc: Priority of a packet based on the CPU_REASON for packet being sent to CPU.
+          Each CPU_REASON corrisponds to 2 bits, 00 = crit_prio, 01 = low_prio, 10 = high_prio.
+          This word covers CPU_REASONS 16..31
+  - type: opaque
+    bytes: 232 # all deadbeef
+  - type: bitfield
+    bits: 32
+    name: fwd_cfg
+    desc: Configuration for GDM
+    fields:
+      - bits: 1
+        name: vip
+        desc: GDM2 only, configure whether VIP packets are included in rate control calculation.
+              They are not actually dropped in any case.
+      - bits: 1
+        name: l2lu_dcsp_2cpu
+        desc: On L2LU DSCP lookup miss, send packet to CPU
+      - bits: 1
+        name: l2lu_ctag_2cpu
+        desc: On L2LU CTAG lookup miss, send package to CPU
+      - bits: 1
+        name: l2lu_stag_2cpu
+        desc: On L2LU STAG lookup miss, send packet to CPU
+      - bits: 1
+        name: g2_underrun_retry
+        desc: Unknown/Unused, see GDM2_UNDERRUN_RETRY / GDMA1_FWD_CFG_RETRY_OFFSET
+      - bits: 1
+        name: g2_drop_256b
+        desc: Unknown/unused, referred to as GDM2_DROP_256B
+      - bits: 1
+        name: drop_oversize
+        desc: If frame length (with CRC) is greater than rx_len_threshold.oversize_len, drop.
+              Referred to as GDM2_DROP_LONG.
+      - bits: 1
+        name: drop_runt
+        desc: If frame length (with CRC) is less than rx_len_threshold.runt_len, drop.
+              Referred to as GDM2_DROP_RUNT.
+      - bits: 1
+        name: drop_crc
+        desc: If eth CRC invalid, drop. See GDM2_DROP_CRC_ERR
+      - bits: 1
+        name: drop_ip4_csum
+        desc: Drop packet on IPv4 checksum error
+      - bits: 1
+        name: drop_tcp_csum
+        desc: Drop packet on TCP checksum error
+      - bits: 1
+        name: drop_ucp_csum
+        desc: Drop packet on UDP checksum error
+      - bits: 1
+        name: g2_favor_oam
+        desc: Favor OAM frames during transmission, this probably means raise their priority.
+              GDM2 only, EN761221 (EN7521/EN7526) only, see GDMA2_TX_FAVOR_OAM_OFFSET
+      - bits: 1
+        name: l2lu_brg_cpu
+        desc: Packets which are L2LU misses and which match an L2-Bridge to be forwarded
+              to the CPU. Referred to as GDMA1_FWD_CFG_BRG_OFFSET
+      - bits: 1
+        name: l2lu_unbrg_cpu
+        desc: Packets which are L2LU misses and which are NOT part of a L2-Bridge to be forwarded
+              to the CPU. Referred to as GDMA1_FWD_CFG_RUT_OFFSET
+      - bits: 1
+        name: strip_crc
+        desc: Strip eth crc trailer on RX, this is used with g1_cport_cfg.add_crc when
+              xPON WAN and LAN are bridged.
+      - bits: 4
+        name: mymac_fport
+        desc: GDM_P_* port for packets with our MAC address
+      - bits: 4
+        name: bcast_fport
+        desc: GDM_P_* port for broadcast packets
+      - bits: 4
+        name: mcast_fport
+        desc: GDM_P_* port for multicast packets
+      - bits: 4
+        name: default_fport
+        desc: GDM_P_* port for other packets
+  - type: word
+    bits: 32
+    name: tx_shaper
+    desc: Traffic shaper for TX
+  - type: struct
+    name: mymac_lsb
+    desc: Mac address bytes [c,d,e,f]
+    fields:
+      - type: word
+        bits: 8
+        name: c
+      - type: word
+        bits: 8
+        name: d
+      - type: word
+        bits: 8
+        name: e
+      - type: word
+        bits: 8
+        name: f
+  - type: struct
+    name: mymac_msb
+    desc: Mac address most bytes [a,b] and also matcher mask
+    fields:
+      - type: word
+        bits: 8
+      - type: word
+        bits: 8
+        name: lsb_mask
+        desc: Least significant bit of MAC is matched on this mask to decide if traffic is for us
+      - type: word
+        bits: 8
+        name: a
+      - type: word
+        bits: 8
+        name: b
+  - type: word
+    bits: 32
+    name: stag_en
+    desc: Add Special Tag on RX frames, 0 or 1
+    typedef: bool
+  - type: struct
+    name: rx_len_threshold
+    short_name: len_th
+    fields:
+      - type: word
+        bits: 16
+        name: oversize_len
+        desc: Packet larger than this is treated as oversize. Max value is 0x3f00
+      - type: word
+        bits: 16
+        name: runt_len
+        desc: Packet smaller than this is treated as a runt
+  - type: bitfield
+    name: pcp
+    bits: 32
+    desc: These codings are defined in IEEE 802.1ad and define how priority and drop-eligiblity.
+          should be represented in the 3 bit VLAN PCP header.
+          8p0d specifies 8 priorities of which none are drop-eligible.
+          7p1d specifies 7 priorities + p0d which is the same as p0, but marked drop-eligible.
+          6p2d specieies 6 priorities + p0d and p1d, same as p0 and p1, but marked drop-eligible.
+          5p3d specifies 5 priorities + p0d, p1d, and p2d, same as p0, p1, p2, but marked drop-eligible.
+    fields:
+      - bits: 16
+      - bits: 4
+        name: gdm_rx
+        enum:
+          "5p3d": 8
+          "6p2d": 4
+          "7p1d": 2
+          "8p0d": 1
+      - bits: 4
+        name: gdm_tx
+      - bits: 4
+        name: cdm_rx
+      - bits: 4
+        name: cdm_tx
+  - type: bitfield
+    bits: 32
+    name: loopback
+    short_name: lpbk
+    desc: This is a poorly understood / rarely used register which seems to control GDM level
+          loopback. It has gap, len, and channel. Channel seems to corrispond to the QDMA channel
+          but the meaning of gap and len are unknown. Names include GDMA1_LPBK_CFG, GDMA2_LPBP_CFG,
+          and REG_GDM_LPBK_CFG (Airoha).
+    fields:
+      - bits: 8
+        name: gap
+      - bits: 14
+        name: len
+      - bits: 1
+      - bits: 5
+        name: chan
+      - bits: 1
+        name: gap_mode
+      - bits: 1
+        name: len_mode
+      - bits: 1
+        name: chan_mode
+      - bits: 1
+        name: enabled
+  - type: bitfield
+    bits: 32
+    name: channel_retire
+    desc: Shut down a channel and release its resources
+    fields:
+      - bits: 23
+      - bits: 5
+        name: channel
+        desc: Number of the channel to release
+      - bits: 2
+      - bits: 1
+        name: done
+        desc: Read 1 when channel release has completed
+      - bits: 1
+        name: release
+        desc: Write 1 to release the channel
+  - type: word
+    bits: 32
+    name: enabled_tx_channels
+    short_name: tx_ch_en
+    desc: Each bit corripsonds to one of the 32 channels, set bit to enable channel
+  - type: word
+    bits: 32
+    name: enabled_rx_channels
+    short_name: rx_ch_en
+    desc: Each bit 0..16 corrisonds to one of the 16 RX channels, upper 16 bits are unused
+  - type: bitfield
+    bits: 32
+    desc: Apparently the lower 8 channels RX channels can be wired to forward to any fport on receipt.
+          This is not really ever used and the default value is disabled + all route to PPE.
+    fields:
+      - bits: 1
+        name: rx7_en
+      - bits: 3
+        name: rx7_fport
+      - bits: 28 # More of the same
+  - type: struct
+    name: g2_rx_shapers
+    desc: Incoming traffic shapers, only present in GDM2
+    fields:
+    - type: word
+      bits: 32
+      name: mymac
+      desc: Shaper for incoming traffic to my MAC
+    - type: word
+      bits: 32
+      name: bcast
+      desc: Shaper for incoming broadcast traffic
+    - type: word
+      bits: 32
+      name: mcast
+      desc: Shaper for incoming multicast traffic
+    - type: word
+      bits: 32
+      name: dflt
+      desc: Default shaper for incoming traffic not otherwise categorized
+  - type: bitfield
+    bits: 32
+    name: g1_cport_cfg
+    desc: Not well known what the CPORT config does, a few bits are understood.
+          Only used in GDM1, but might still be present in GDM2.
+    fields:
+      - bits: 1
+      - bits: 1
+        name: add_crc
+        desc: Add the ethernet trailing CRC to incoming frames (from the switch)
+              this is used with fwd_cfg.strip_crc when xPON WAN and LAN are
+              bridged because xPON PHY always sends us a CRC.
+      - bits: 3
+      - bits: 1
+        name: pad
+        desc: Enable padding (fe_api_set_padding, FE_CPORT_PAD), meaning is unknown but
+              this is always set at startup.
+      - bits: 1
+        name: port_xfc
+        desc: FE_CPORT_PORT_XFC_MASK, always set on startup. Meaning is thought to be
+              frame engine will pause in case of congestion on port (i.e. switch)
+      - bits: 1
+        name: queue_xfc
+        desc: FE_CPORT_QUEUE_XFC_MASK, always cleared on startup. Meaning is throught to
+              be individual queue will pause in case of congestion on port (i.e. switch)
+      - bits: 24   
+        name: unknown
+        desc: Observed value 0x000a02, never updated, unknown meaning
+  - type: word
+    bits: 32
+    name: g1_cport_channel_map
+    desc: Called FE_CPORT_CHN_MAP, never used, observed value is 0x76543210, GDM1 only
+  - type: word
+    bits: 32
+    name: g1_cport_shaper
+    desc: Traffic shaper for CPORT
+  - type: word
+    bits: 32
+    name: g1_unknown0
+    desc: Unused, no symbol, observed value 0x000003c0, GDM1 only.
+  - type: word
+    bits: 32
+    name: g1_unknown1
+    desc: Unused, no symbol, observed value 0x00000000, GDM1 only.
+  - type: opaque
+    bytes: 28
+  - type: word
+    bits: 32
+    name: tx_chan_active
+    desc: Each of the 32 bits represents one of the 32 channels, 1 means channel is active
+          used with channel_retire to confirm channel is shutdown. Also GDMA1_TX_CHN_VLD
+  - type: word
+    bits: 32
+    name: rx_chan_active
+    desc: Unused in practice except on EN7580, each bit represents an RX channel, 1 means
+          RX channel is active, used with channel_retire. Unsure if 16 or 32 RX channels.
+          Also GDMA1_RX_CHN_VLD
+  - type: opaque
+    bytes: 8
+  - type: struct
+    name: cdm_counters
+    desc: Various packet counters for CDM1 / CDM2
+    fields:
+      - type: word
+        bits: 32
+        name: tx
+        desc: Unused in practice, seems to be frames successfully sent by CDM, also CDMA1_TX_OK_CNT
+      - type: opaque
+        bytes: 12
+      - type: word
+        bits: 32
+        name: rxcpu
+        desc: Unused in practice, seems to be frames successfully received to CPU by CDM,
+              also CDMA1_RXCPU_OK_CNT
+      - type: word
+        bits: 32
+        name: rxhwf
+        desc: Unused in practice, seems to be frames successfully received to hardware forwarding chain
+              by CDM, also CDMA1_RXHWF_OK_CNT
+      - type: word
+        bits: 32
+        name: ka
+        desc: Unused in practice, seems to be frames sent to CPU for NAT keepalive purposes,
+              also CDMA1_RXCPU_KA_CNT
+      - type: word
+        bits: 32
+      - type: word
+        bits: 32
+        name: rxcpu_drop
+        desc: Unused in practice, seems to be frames dropped for congestion on the RX->CPU chain, also
+              CDMA1_RXCPU_DROP_CNT
+      - type: word
+        bits: 32
+        name: rxhwf_drop
+        desc: Unused in practice, seems to be frames dropped for congestion on the
+              RX->Hardware Forwarding chain, also CDMA1_RXHWF_DROP_CNT
+      - type: word
+        bits: 32
+        name: unknown0
+        desc: Unused, no symbol, observed value matches rxcpu
+      - type: word
+        bits: 32
+        name: unknown1
+        desc: Unused, no symbol, observed value 0x00000000
+      - type: word
+        bits: 32
+        name: unknown2
+        desc: Unused, no symbol, observed value 0x00000000
+      - type: word
+        bits: 32
+        name: unknown3
+        desc: Unused, no symbol, observed value 0x00000000
+      - type: word
+        bits: 32
+        name: unknown4
+        desc: Unused, no symbol, observed value 0x00000000
+      - type: word
+        bits: 32
+        name: unknown5
+        desc: Unused, no symbol, observed value 0x00000000
+  - type: opaque
+    bytes: 48
+  - type: bitfield
+    bits: 32
+    name: clear_counters
+    short_name: cl_cnt
+    fields:
+      - bits: 30
+      - bits: 1
+        name: rx
+        desc: Set a 1 to clear GDM RX counters
+        only: write
+      - bits: 1
+        name: tx
+        desc: Set a 1 to clear GDM TX counters
+        only: write
+  - type: opaque
+    bytes: 12
+  - type: struct
+    name: counters
+    desc: Packet and byte counters for GDM port
+    fields:
+      - type: struct
+        name: tx
+        fields:
+          - type: word
+            bits: 32
+            name: get
+            desc: Unused in practice, believed to be number of packets enregistered for TX, also
+                  GDMA1_TX_GET_CNT / GDMA2_TX_GETCNT
+          - type: word
+            bits: 32
+            name: tx_pkts
+            short_name: pkts
+            desc: Packets successfully transmitted, also GDMA1_TX_OK_CNT / GDMA2_TX_OKCNT
+          - type: word
+            bits: 32
+            name: drops
+            desc: Packets dropped on transmission chain, also GDMA1_TX_DROP_CNT / GDMA2_TX_DROPCNT
+          - type: word
+            bits: 32
+            name: bytes
+            desc: Bytes successfully transmitted, also GDMA1_TX_OK_BYTE_CNT / GDMA2_TX_OKBYTE_CNT
+          - type: struct
+            name: g2
+            desc: GDM2 only extended TX stats
+            fields:
+              - type: word
+                bits: 32
+                name: tx_epkts
+                short_name: epkts
+                desc: Number of eth frames transmitted, should match .pkts, also GDMA2_TX_ETHCNT
+              - type: word
+                bits: 32
+                name: tx_ebytes
+                short_name: ebytes
+                desc: Bytes of eth bytes transmitted, also GDMA2_TX_ETHLENCNT
+              - type: word
+                bits: 32
+                name: edrops
+                desc: Number of eth frames dropped, see GDMA2_TX_ETHDROPCNT
+              - type: word
+                bits: 32
+                name: tx_bcast
+                short_name: bcast
+                desc: Number of broadcast frames transmitted, see GDMA2_TX_ETHBCDCNT
+              - type: word
+                bits: 32
+                name: tx_mcast
+                short_name: mcast
+                desc: Number of multicast frames transmitted, see GDMA2_TX_ETHMULTICASTCNT
+              - type: word
+                bits: 32
+                name: f_less_64
+                desc: Counter of TX frames of length less than 64, see GDMA2_TX_ETH_LESS64_CNT
+              - type: word
+                bits: 32
+                name: f_more_1518
+                desc: Counter of TX frames of length more than 1518, see GDMA2_TX_ETH_MORE1518_CNT
+              - type: word
+                bits: 32
+                name: f_64
+                desc: Counter of TX frames of length 64, see GDMA2_TX_ETH_64_CNT
+              - type: word
+                bits: 32
+                name: f_65_127
+                desc: Counter of TX frames of length 65-127, see GDMA2_TX_ETH_65_TO_127_CNT
+              - type: word
+                bits: 32
+                name: f_128_255
+                desc: Counter of TX frames of length 128-255, see GDMA2_TX_ETH_128_TO_255_CNT
+              - type: word
+                bits: 32
+                name: f_256_511
+                desc: Counter of TX frames of length 256-511, see GDMA2_TX_ETH_256_TO_511_CNT
+              - type: word
+                bits: 32
+                name: f_512_1023
+                desc: Counter of TX frames of length 512-1023, see GDMA2_TX_ETH_512_TO_1023_CNT
+              - type: word
+                bits: 32
+                name: f_1024_1518
+                desc: Counter of TX frames of length 1024-1518, see GDMA2_TX_ETH_1024_TO_1518_CNT
+      - type: word
+        bits: 32
+      - type: struct
+        name: rx
+        fields:
+          - type: word
+            bits: 32
+            name: pkts
+            desc: Number of packets received, see GDMA1_RX_OK_CNT / GDMA2_RX_OKCNT
+          - type: word
+            bits: 32
+            name: drops_fc
+            desc: Packets dropped due to flow control, thought to be when port sends PAUSE signal.
+                  see GDMA1_RX_FC_DROP_CNT
+          - type: word
+            bits: 32
+            name: drops_rc
+            desc: Packets dropped due to rate control, thought to be shapers.
+                  See GDMA1_RX_RC_DROP_CNT / GDMA2_RX_RCDROPCNT
+          - type: word
+            bits: 32
+            name: drops_overflow
+            desc: Packets dropped because we ran out of queue resources, vendor code logs when this
+                  counter increases so it should not happen. GDMA2_RX_OVDROPCNT / GDMA1_RX_OVER_DROP_CNT
+          - type: word
+            bits: 32
+            name: drops_err
+            desc: Packets dropped because of any error (crc, IP/TCP/UDP checksum, oversize, runt, etc)
+          - type: word
+            bits: 32
+            name: bytes
+            desc: Received bytes, see GDMA1_RX_BYTECNT / GDMA2_RX_OKBYTECNT
+          - type: struct
+            name: g2
+            desc: GDM2 only extended RX stats
+            fields:
+              - type: word
+                bits: 32
+                name: epkts
+                desc: Number of eth frames received, should match .pkts, also GDMA2_RX_ETHERPCNT
+              - type: word
+                bits: 32
+                name: ebytes
+                desc: Bytes of eth bytes received, also GDMA2_RX_ETHERPLEN
+              - type: word
+                bits: 32
+                name: edrops
+                desc: Number of eth frames dropped, see GDMA2_RX_ETHDROPCNT
+              - type: word
+                bits: 32
+                name: bcast
+                desc: Number of broadcast frames received, see GDMA2_RX_ETHBCCNT
+              - type: word
+                bits: 32
+                name: mcast
+                desc: Number of multicast frames received, see GDMA2_RX_ETHMCCNT
+              - type: word
+                bits: 32
+                name: ecrc
+                desc: Number of frames with CRC errors, see GDMA2_RX_ETHCRCCNT
+              - type: word
+                bits: 32
+                name: efrag
+                desc: Number of frames with CRC error and which are less than 64 bytes (probably fragments
+                      from synchronization issue) see GDMA2_RX_ETHFRACCNT
+              - type: word
+                bits: 32
+                name: ejabber
+                desc: Number of frames longer than 1518 with bad CRC, sign of potentially jabbering
+                      hardware, see GDMA2_RX_ETHJABCNT
+
+              - type: word
+                bits: 32
+                name: f_less_64
+                desc: Counter of TX frames of length less than 64, see GDMA2_RX_ETHRUNTCNT
+              - type: word
+                bits: 32
+                name: f_more_1518
+                desc: Counter of TX frames of length more than 1518, see GDMA2_RX_ETHLONGCNT
+              - type: word
+                bits: 32
+                name: f_64
+                desc: Counter of TX frames of length 64, see GDMA2_RX_ETH_64_CNT
+              - type: word
+                bits: 32
+                name: f_65_127
+                desc: Counter of TX frames of length 65-127, see GDMA2_RX_ETH_65_TO_127_CNT
+              - type: word
+                bits: 32
+                name: f_128_255
+                desc: Counter of TX frames of length 128-255, see GDMA2_RX_ETH_128_TO_255_CNT
+              - type: word
+                bits: 32
+                name: f_256_511
+                desc: Counter of TX frames of length 256-511, see GDMA2_RX_ETH_256_TO_511_CNT
+              - type: word
+                bits: 32
+                name: f_512_1023
+                desc: Counter of TX frames of length 512-1023, see GDMA2_RX_ETH_512_TO_1023_CNT
+              - type: word
+                bits: 32
+                name: f_1024_1518
+                desc: Counter of TX frames of length 1024-1518, see GDMA2_RX_ETH_1024_TO_1518_CNT
+              - type: word
+                bits: 32
+                name: tx_unknown0
+                short_name: unknown0
+                desc: Observed 0x00000000, possible counter
+              - type: word
+                bits: 32
+                offset: 0x2a4 # No padding, just to verify
+                name: unknown1
+                desc: Observed 0x00000000, possible counter
