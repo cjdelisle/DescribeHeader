@@ -1,0 +1,89 @@
+# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+#
+# This is part of the EcoNet Ethernet driver
+# This is the configuration register for each QDMA engine.
+# For the driver. See: https://github.com/cjdelisle/econet_eth
+#
+type: struct
+name: qdma_interrupts
+short_name: qint
+fields:
+  - type: bitfield
+    bits: 32
+    fields:
+      - bits: 7
+      - bits: 1
+        name: xpon
+        desc: Interrupt drom the XPON phy
+      - bits: 6
+      - bits: 1
+        name: epon
+        desc: Interrupt drom the EPON phy
+      - bits: 1
+        name: gpon
+        desc: Interrupt drom the GPON phy
+      - bits: 1
+        name: rx1_coherent_err
+        short_name: rx1_coh_e
+        desc: Data coherent error in RX of ring1
+      - bits: 1
+        name: tx1_coherent_err
+        short_name: tx1_coh_e
+        desc: Data coherent error in TX of ring1
+      - bits: 1
+        name: rx0_coherent_err
+        short_name: rx0_coh_e
+        desc: Data coherent error in RX of ring0
+      - bits: 1
+        name: tx0_coherent_err
+        short_name: tx0_coh_e
+        desc: Data coherent error in RX of ring0
+      - bits: 1
+        name: rx_pkt_overflow
+        short_name: rx_ovf
+        desc: RX packets overflow occurred
+      - bits: 1
+        name: fwd_dscp_low
+        short_name: fwd_dscp_l
+        desc: Available forward descriptors is <= hw_cfg.low_th
+      - bits: 1
+        name: done_full
+        short_name: done_full
+        desc: Done list is full
+      - bits: 1
+        name: fwd_desc_empty
+        short_name: no_fwd_desc
+        desc: Available forward descriptors is empty
+      - bits: 1
+        name: no_rx1_cpu_dscp
+        short_name: no_rx1_dscp
+        desc: No RX ring1 CPU descriptor available; TX DMA halts until descriptors are available
+      - bits: 1
+        name: no_tx1_cpu_dscp
+        short_name: no_tx1_dscp
+        desc: No TX ring1 CPU descriptor available; TX DMA halts until descriptors are available
+      - bits: 1
+        name: rx1_done
+        short_name: rx1_done
+        desc: RXDMA ring1 packet DONE interrupt (packet received into DRAM)
+      - bits: 1
+        name: tx1_done
+        short_name: tx1_done
+        desc: TXDMA ring1 packet DONE interrupt (packet sent to MAC), this is noisy so you rather
+              keep it masked and use the Done List.
+      - bits: 1
+        name: no_rx0_cpu_dscp
+        short_name: no_rx0_dscp
+        desc: No RX ring0 CPU descriptor available; TX DMA halts until descriptors are available
+      - bits: 1
+        name: no_tx0_cpu_dscp
+        short_name: no_tx0_dscp
+        desc: No TX ring0 CPU descriptor available; TX DMA halts until descriptors are available
+      - bits: 1
+        name: rx0_done
+        short_name: rx0_done
+        desc: RXDMA ring0 packet DONE interrupt (packet received into DRAM)
+      - bits: 1
+        name: tx0_done
+        short_name: tx0_done
+        desc: TXDMA ring0 packet DONE interrupt (packet sent to MAC, indicates TX IRQ)

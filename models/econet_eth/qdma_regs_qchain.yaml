@@ -1,6 +1,13 @@
+# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+#
+# This is part of the EcoNet Ethernet driver
+# It is part of the memory mapped IO registers of a QDMA engine,
+# each QDMA engine has 2 "chains" (sets of RX and TX ring)
+# For the driver. See: https://github.com/cjdelisle/econet_eth
+#
 type: struct
-name: qring
-desc: QDMA Ring Registers
+name: qchain
+desc: QDMA Chain Registers
 fields:
   - type: word
     bits: 32

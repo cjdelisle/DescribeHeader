@@ -12,22 +12,233 @@ fields:
     name: version
     bits: 32
     offset: 0x000
-  - type: opaque
-    name: cfg
-    bytes: 4
-    offset: 0x004
-    decl: struct qdma_cfg cfg;
+  - type: word
+    name: qcfg
+    bits: 32
   - type: opaque
     name: qchain0
     bytes: 24
     offset: 0x008
-    decl: struct qchain qchain0;
+    decl: struct qchain_regs qchain0;
+  - type: word
+    bits: 32
+    name: hwf_desc_addr
+    desc: Hardware forwarding descriptor table address. This memory must be
+          forward-descriptor-size (16 bytes) * fwd_desc_n in size.
+    offset: 0x020
+    typedef: dma_addr_t
+  - type: word
+    bits: 32
+    name: hwf_data_addr
+    desc: Hardware forwarding packet content address. This memory must be
+          pkt_sz *  fwd_desc_n in size.
+    typedef: dma_addr_t
+  - type: bitfield
+    name: hwf_cfg
+    desc: Hardware forwarding configuration
+    bits: 32
+    fields:
+      - bits: 2
+      - bits: 2
+        name: pkt_sz
+        desc: The size of the packet buffers in hwf_data_addr (and therefore
+              the maximum effective MTU).
+        enum:
+          "2048": 0
+          "4096": 1
+          "8192": 2
+          "16384": 3
+      - bits: 15
+      - bits: 13
+        name: low_desc_threshold
+        short_name: low_th
+        desc: When number of available (not busy) hardware descriptors is
+              below this, generate an interrupt and pause hardware forwarding.
+  - type: struct
+    name: hwf_cfg1
+    desc: Hardware forwarding configuration (also called LMGR)
+    fields:
+      - type: bitfield
+        bits: 8
+        fields:
+        - bits: 1
+          name: start
+          desc: Start up the hardware forwarding subsystem
+        - bits: 6
+        - bits: 1
+          name: overhead_enabled
+          short_name: overhead_en
+          desc: When set, add overhead to packet size for accounting purposes
+      - type: word
+        bits: 8
+        name: overhead
+        desc: Amount of overhead to add to packet size for accounting
+      - type: word
+        bits: 16
+        name: fwd_desc_n
+        desc: Number of forward descriptors to use.
+  - type: word
+    name: int_status
+    desc: When an interrupt is triggered, these are the pending events
+    bits: 32
+  - type: word
+    name: int_enable
+    desc: Enabled interrupts
+    bits: 32
+  - type: word
+    offset: 0x058
+    bits: 32
+    name: tx_int_delay
+    desc: Interrupt delay for reducing interrupt load
+  - type: word
+    offset: 0x05c
+    bits: 32
+    name: rx_int_delay
+    desc: Interrupt delay for reducing interrupt load
+  - type: struct
+    name: done_queue
+    short_name: doneq
+    offset: 0x060
+    fields:
+      - type: word
+        bits: 32
+        name: address
+        short_name: addr
+        typedef: dma_addr_t
+      - type: struct
+        name: config
+        short_name: cfg
+        fields:
+          - type: word
+            name: int_threshold
+            bits: 16
+            desc: When done queue is this full, fire an interrupt, max 4095
+            short_name: intt
+          - type: word
+            name: size
+            bits: 16
+            short_name: sz
+            desc: Size of the done queue buffer in 4 byte units, max 4095
+      - type: word
+        name: pop_back
+        bits: 32
+        desc: Pop this number of items from the back of the the done queue, max 255
+      - type: struct
+        name: state
+        fields:
+          - type: word
+            name: length
+            bits: 16
+            desc: Number of items waiting in the queue
+            short_name: len
+          - type: word
+            name: head_index
+            bits: 16
+            short_name: head
+            desc: Index of the first item in the list
+      - type: word
+        bits: 32
+        name: wait_time
+        desc: If there is anything in the queue, fire an interrupt after this number of
+              units of time, unit is 20 microseconds.
 
+  - type: struct
+    name: tx_congest_cfg
+    fields:
+      - type: bitfield
+        desc: Configuration for TX congestion dropping
+        bits: 16
+        fields:
+          - bits: 1
+            name: tail_drop_en
+          - bits: 1
+            name: dei_drop_en
+            desc: Support 802.1ad DEI packet dropping
+          - bits: 1
+            name: dyncong_en
+            desc: Enable dynamic congestion algorithm
+          - bits: 1
+          - bits: 1
+            name: max_thr_blk_tx1
+            desc: Block TX Ring1 when TX buffer usage exceeds max threshold (see tx_congest_thr)
+          - bits: 1
+            name: min_thr_blk_tx1
+            desc: Block TX Ring1 when TX buffer usage exceeds min threshold (see tx_congest_thr)
+          - bits: 1
+            name: max_thr_blk_tx0
+            desc: Block TX Ring0 when TX buffer usage exceeds max threshold (see tx_congest_thr)
+          - bits: 1
+            name: min_thr_blk_tx0
+            desc: Block TX Ring0 when TX buffer usage exceeds min threshold (see tx_congest_thr)
+          - bits: 2
+            name: dyncong_margin
+            enum:
+              "0_PCT": 0
+              "25_PCT": 1
+              "50_PCT": 2
+              "100_PCT": 3
+          - bits: 2
+            name: dyncong_dei_scale
+            enum:
+              HALF: 0
+              QUARTER: 1
+              EIGHTH: 2
+              SIXTEENTH: 3
+          - bits: 1
+          - bits: 1
+            name: dyncong_upd_wrr
+            desc: Update dyanmic congestion after each update to WRR weights.
+          - bits: 1
+            name: dyncong_upd_txrx
+            desc: Update dyanmic congestion after each TX or RX
+          - bits: 1
+            name: dyncong_upd_tick
+            desc: Update dyanmic congestion after each tick
+      - type: word
+        name: dyncong_tick
+        bits: 16
+        desc: Dynamic congestion ticker rate in microseconds
+  - type: struct
+    name: tx_congest_thr
+    fields:
+      - type: word
+        name: max
+        desc: When total buffer usage exceeds this, drop all packets except VIP
+        bits: 16
+      - type: word
+        name: min
+        desc: When total buffer usage exceeds this, dynamic congestion control will start
+        bits: 16
+
+  - type: struct
+    name: rxring_size
+    offset: 0x100
+    fields:
+      - type: word
+        bits: 16
+        name: rxring0_size
+        desc: Size of RX ring zero, maximum 4095
+      - type: word
+        bits: 16
+        name: rxring1_size
+        desc: Size of ring one, maximum 4095
+  - type: struct
+    name: rxring_low
+    offset: 0x104
+    fields:
+      - type: word
+        bits: 16
+        name: rxring0_low
+        desc: Trigger interrupt when number of free RX descs <= this, maximum 4095
+      - type: word
+        bits: 16
+        name: rxring1_low
+        desc: Trigger interrupt when number of free RX descs <= this, maximum 4095
   - type: opaque
     name: qchain1
     bytes: 24
     offset: 0x108
-    decl: struct qchain qchain1;
+    decl: struct qchain_regs qchain1;
 
   - type: word
     name: end_word
