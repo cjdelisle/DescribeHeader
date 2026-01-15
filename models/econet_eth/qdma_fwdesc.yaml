@@ -1,0 +1,45 @@
+# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+#
+# This is part of the EcoNet Ethernet driver
+# It is the data structure of a Packet Descriptor which is used in the QDMA ring
+# for the driver. See: https://github.com/cjdelisle/econet_eth
+#
+type: struct
+name: qdma_fwdesc
+short_name: fwdesc
+desc: QDMA Hardware Forward Packet Descriptor
+fields:
+  - type: word
+    name: pkt_addr
+    desc: Physical (DMA) address of the packet
+    bits: 32
+  - type: struct
+    name: info
+    fields:
+      - type: bitfield
+        bits: 16
+        fields:
+          - name: ctx
+            bits: 1
+            desc: True if there is a context descriptor (i.e. it is send, not a forward)
+          - bits: 2
+          - name: ctx_ring
+            bits: 1
+            desc: If ctx is true then this is the number of the context ring (0 or 1) because there are 2 transmit rings.
+          - name: ctx_idx
+            bits: 12
+            desc: If ctx is true then this is the index within the TX ring of the context packet descriptor.
+      - type: word
+        name: pkt_len
+        bits: 16
+        desc: Length of the packet in bytes
+  - type: union
+    name: msg
+    desc: This is either Ethernet RX, Ethernet TX, xPON RX, or xPON TX
+    fields:
+      - type: opaque
+        bytes: 8
+        decl: struct qdma_desc_etx etx;
+      - type: opaque
+        bytes: 8
+        decl: u32 raw[2];

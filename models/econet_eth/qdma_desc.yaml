@@ -13,44 +13,44 @@ fields:
     name: unknown0
     desc: Reserved / unused, we still export the symbol so we can show it in debugging
     bits: 32
-  - type: bitfield
-    bits: 16
+  - type: struct
+    name: info
     fields:
-      - name: done
-        bits: 1
-        desc: Descriptor Done flag, this roughly means that the DSCP "belongs to the driver",
-              the hardware will set it when it is done receiving or sending and will check to
-              make sure it's not touching a DSCP that is not meant for it. This is not strictly
-              necessary, you can determine which packets are yours only through ring indexes and
-              the TX Done List, and setting and checking of this flag can be deactivated.
-      - name: dropped
-        bits: 1
-        desc: Packet has been dropped
-      - name: nls
-        bits: 1
-        desc: Unknown meaning but used on EN761627 and EN7580
-      - desc: Reserved / unused, we still export the symbol so we can show it in debugging
-        name: unknown1
-        bits: 13
-  - type: word
-    name: pkt_len
-    bits: 16
-    desc: Length of the packet in bytes
+      - type: bitfield
+        bits: 16
+        fields:
+          - name: done
+            bits: 1
+            desc: Descriptor Done flag, this roughly means that the DSCP "belongs to the driver",
+                  the hardware will set it when it is done receiving or sending and will check to
+                  make sure it's not touching a DSCP that is not meant for it. This is not strictly
+                  necessary, you can determine which packets are yours only through ring indexes and
+                  the TX Done List, and setting and checking of this flag can be deactivated.
+          - name: dropped
+            bits: 1
+            desc: Packet has been dropped
+          - name: nls
+            bits: 1
+            desc: Unknown meaning but used on EN761627 and EN7580
+          - desc: Reserved / unused, we still export the symbol so we can show it in debugging
+            name: unknown1
+            bits: 13
+      - type: word
+        name: pkt_len
+        bits: 16
+        desc: Length of the packet in bytes
   - name: pkt_addr
     type: word
     bits: 32
     desc: Physical (DMA) address of the packet
-  - type: bitfield
+  - type: word
     bits: 32
-    fields:
-      - desc: Reserved / unused, we still export the symbol so we can show it in debugging
-        name: unknown2
-        bits: 20
-      - name: next_idx
-        desc: Index of the next descriptor in the ring.
-        bits: 12
+    name: next_idx
+    desc: Index of the next descriptor in the ring, max 4096. RX packets are always received in sequencial
+          order so this is disconsidered for RX and the hardware always zeros it after use. TX packets with
+          differing priority will generally complete out of order so for TX, descriptors are a linked list.
   - type: union
-    name: t
+    name: msg
     desc: This is either Ethernet RX, Ethernet TX, xPON RX, or xPON TX
     fields:
       - type: opaque

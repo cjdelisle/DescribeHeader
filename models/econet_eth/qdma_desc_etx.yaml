@@ -47,16 +47,17 @@ fields:
       - name: fport
         bits: 3
         desc: Where in the Frame Engine to send the packet to
-          Loopback is immediate loopback, QDMA_LOOPBACK is loopback after QoS reprioritization
-          and QDMA_HW_LOOPBACK is loopback after (I think) hardware forwarding.
-          The most useful values are LAN, WAN, and PPE (Packet Processing Engine).
+          QDMA0_CPU / QDMA1_CPU sends to CPU via the relevant QDMA engine. QDMA0_HWF
+          and QDMA1_HWF goes to QDMA hardware forwarding. GDM1 is the LAN, GDM2 is
+          the WAN, and PPE is the Packet Processing Engine.
         enum:
-          LOOPBACK: 0
-          LAN: 1
-          WAN: 2
+          QDMA0_CPU: 0
+          GDM1: 1
+          GDM2: 2
+          QDMA0_HWF: 3
           PPE: 4
-          QDMA_LOOPBACK: 5
-          QDMA_HW_LOOPBACK: 6
+          QDMA1_CPU: 5
+          QDMA1_HWF: 6
           DROP: 7
       - name: vlan_en
         bits: 1

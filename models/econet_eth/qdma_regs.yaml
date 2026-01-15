@@ -11,10 +11,95 @@ fields:
   - type: word
     name: version
     bits: 32
-    offset: 0x000
-  - type: word
-    name: qcfg
-    bits: 32
+  - type: struct
+    name: qdma_cfg
+    short_name: qcfg
+    fields:
+      - type: bitfield
+        bits: 32
+        fields:
+          - name: rx_2b_offset
+            bits: 1
+            desc: If enabled, use (dscp_pkt_ptr + 2) as starting address for rx payload
+          - name: dma_preference
+            short_name: dma_pref
+            bits: 2
+            enum:
+              ROUND_ROBIN: 0
+              FRX_TX1_TX0: 1
+              TX1_FRX_TX0: 2
+              TX1_TX0_FRX: 3
+            desc: DMA channel scheduling preference, FRX means "Forwarding and RX"
+          - name: msg_word_swap
+            bits: 1
+            desc: Enable message word swap, don't know what this does but every implementation
+                  sets it on Big Endian.
+          - name: dscp_byte_swap
+            bits: 1
+            desc: Endian-swap packet descriptors (?), drivers always set this on Big Endian machines.
+          - name: payload_byte_sw
+            bits: 1
+            desc: Endian-swap payload bytes, drivers always set this on Big Endian machines.
+          - name: vchnl_map_en
+            bits: 1
+            desc: Enable virtual mapping to group queues per physical channel
+          - name: vchnl_map_mode
+            bits: 1
+            desc: Map of 4 virtual channels per physical channel, 0 = map 2
+          - desc: Reserved
+            bits: 1
+          - name: qdma_lpbk_rxq_sel
+            bits: 1
+            desc: If enabled, qdma loopback goes to queue 1, otherwise it goes to queue zero
+          - name: slm_release_en
+            bits: 1
+            desc: Enable qdma fwd path release slm_block
+          - name: tx_immediate_done
+            bits: 1
+            desc: QDMA generate pkt_done itself instead of using pse pkt_done
+          - name: irq_en
+            bits: 1
+            desc: Enable "interrupt queue" (i.e. Done List) for tx dma done
+          - desc: Reserved
+            bits: 1
+          - name: gdm_loopback
+            bits: 1
+            desc: Enable gdm loopback tx packet to rx path
+          - name: qdma_loopback
+            bits: 1
+            desc: Enable hw qdma loopback tx packet to rx path
+          - desc: Reserved
+            bits: 8
+          - name: check_done
+            bits: 1
+            desc: Check the done bit of descriptor and don't use descriptors which are marked done.
+                  If disabled, the QDMA engine will determine if a descriptor is usable based only
+                  on the ring pointers.
+          - name: tx_wb_done
+            bits: 1
+            desc: Set the "done" bit in tx descriptor after sending. If disabled then the engine
+                  will skip setting the done bit and rely on the driver to check the Done List
+                  (i.e. `irq_en`).
+          - name: burst_size
+            bits: 2
+            enum:
+              16_BYTES: 0
+              32_BYTES: 1
+              64_BYTES: 2
+              128_BYTES: 3
+            desc: Number of bytes per DMA burst
+          - name: rx_dma_busy
+            bits: 1
+            desc: RX DMA engine currently busy
+          - name: rx_dma_en
+            bits: 1
+            desc: Enable RX DMA
+          - name: tx_dma_busy
+            bits: 1
+            desc: TX DMA engine currently busy
+          - name: tx_dma_en
+            bits: 1
+            desc: Enable TX DMA
   - type: opaque
     name: qchain0
     bytes: 24
@@ -54,6 +139,8 @@ fields:
         short_name: low_th
         desc: When number of available (not busy) hardware descriptors is
               below this, generate an interrupt and pause hardware forwarding.
+  - type: word
+    bits: 32
   - type: struct
     name: hwf_cfg1
     desc: Hardware forwarding configuration (also called LMGR)
@@ -77,6 +164,14 @@ fields:
         bits: 16
         name: fwd_desc_n
         desc: Number of forward descriptors to use.
+  - type: opaque
+    bytes: 12
+  - type: word
+    bits: 32
+    name: channel_retire
+    desc: Referred to as QDMA_CSR_LMGR_CHNL_RETIRE
+  - type: opaque
+    bytes: 12
   - type: word
     name: int_status
     desc: When an interrupt is triggered, these are the pending events
@@ -98,7 +193,6 @@ fields:
   - type: struct
     name: done_queue
     short_name: doneq
-    offset: 0x060
     fields:
       - type: word
         bits: 32
@@ -142,8 +236,85 @@ fields:
         desc: If there is anything in the queue, fire an interrupt after this number of
               units of time, unit is 20 microseconds.
 
+  - type: opaque
+    bytes: 12
+
+  - type: bitfield
+    bits: 32
+    offset: 0x80
+    name: wrr_mode
+    desc: WRR control register, called QDMA_CSR_TXWRR_MODE_CFG.
+    fields:
+      - bits: 1
+        name: use_16b
+        desc: If enabled, weighting is based on 16 byte units, otherwise 64 byte.
+      - bits: 27
+      - bits: 1
+        name: by_byte
+        desc: If enabled, weighting is by byte, otherwise by packet.
+      - bits: 3
+
+  - type: word
+    bits: 32
+
+  - type: struct
+    name: wrr_weight
+    desc: Read and write a WRR weight for a channel+queue pair. Called QDMA_CSR_TXWRR_WEIGHT_CFG.
+    fields:
+      - type: bitfield
+        bits: 16
+        fields:
+          - bits: 1
+            name: write
+            only: write
+            desc: Set this bit to write an entry, clear it to read
+          - bits: 1
+            name: done
+            only: read
+            desc: After performing an operation, this bit asserts from the hardware to
+                  indicate the operation is done.
+          - bits: 6
+          - bits: 5
+            name: channel
+            only: write
+            desc: Number of the channel to write or read WRR weight for
+          - bits: 3
+            name: queue
+            only: write
+            desc: Number of the queue to write or read WRR weight for
+      - type: word
+        bits: 8
+      - type: word
+        bits: 8
+        name: value
+        desc: The WRR weight to read or write for the configured channel+queue.
+
+  - type: word
+    bits: 32
+
+  - type: word
+    bits: 32
+    name: buf_usage_cfg
+    desc: Called QDMA_CSR_PSE_BUF_USAGE_CFG, a bitfield, TODO document
+
+  - type: word
+    bits: 32
+    name: tx_meter_cfg
+    desc: Called QDMA_CSR_EGRESS_RATEMETER_CFG, a bitfield, TODO document
+
+  - type: word
+    bits: 32
+    name: tx_limit_cfg
+    desc: Called QDMA_CSR_EGRESS_RATELIMIT_CFG, a bitfield, TODO document
+
+  - type: word
+    bits: 32
+    name: tx_limit_param
+    desc: Called QDMA_CSR_RATELIMIT_PARAMETER_CFG, a bitfield, per-channel tx rate limit, TODO document
+
   - type: struct
     name: tx_congest_cfg
+    offset: 0xa0
     fields:
       - type: bitfield
         desc: Configuration for TX congestion dropping
@@ -198,6 +369,7 @@ fields:
         name: dyncong_tick
         bits: 16
         desc: Dynamic congestion ticker rate in microseconds
+
   - type: struct
     name: tx_congest_thr
     fields:
@@ -209,6 +381,91 @@ fields:
         name: min
         desc: When total buffer usage exceeds this, dynamic congestion control will start
         bits: 16
+
+  - type: word
+    bits: 32
+    name: tx_per_ch_dthr
+    desc: Called QDMA_CSR_TXQ_DYN_CHNLTHR_CFG, tx per-channel dynamic threshold max/min threshold, TODO document
+  - type: word
+    bits: 32
+    name: tx_per_q_dthr
+    desc: Called QDMA_CSR_TXQ_DYN_QUEUETHR_CFG, tx per-queue dynamic threshold max/min threshold, TODO document
+
+  - type: opaque
+    bytes: 32
+    offset: 0xb0
+    name: tx_per_q_sthr
+    desc: Called QDMA_CSR_STATIC_QUEUE_THR(0..7), tx per-queue static thresholds, if dynamic thresholds are disabled, TODO document
+
+  - type: opaque
+    bytes: 16
+  
+  - type: struct
+    name: debug
+    fields:
+      - type: bitfield
+        bits: 32
+        name: mem_ctl
+        desc: Called QDMA_CSR_DBG_MEM_XS_CFG, used for debugging access to memory spaces.
+        fields:
+          - bits: 1
+            name: write
+            only: write
+            desc: Set this bit when writing a value, otherwise clear it to Read
+          - bits: 1
+            name: done
+            only: read
+            desc: Becomes set when the command is completed
+          - bits: 3
+          - bits: 3
+            name: dataset
+            only: write
+            desc: Which dataset to read/write in, called QDMA_DbgMemXsMemSel_t.
+            enum:
+              DESC: 0
+              QUEUE: 1
+              QOS_WEIGHT_CTR: 2
+              DMA_IDX: 3
+              BUF_MON: 4
+              RL_PARAM: 5
+              VCH_WEIGHT: 6
+          - bits: 3
+          - bits: 5
+            name: word_of_elem
+            only: write
+            desc: Which word of the selected element to read/write, called DBG_MEM_XS_BYTESEL_SHIFT
+          - bits: 16
+            name: elem
+            only: write
+            desc: Which element of the dataset to select
+      - type: word
+        bits: 32
+        name: mem_lo
+        desc: Read or write the low bits of a memory element (use with mem_ctl)
+              Called QDMA_CSR_DBG_MEM_XS_DATA_LO.
+      - type: word
+        bits: 32
+        name: mem_hi
+        desc: Read or write the high bits of a memory element (use with mem_ctl)
+              Called QDMA_CSR_DBG_MEM_XS_DATA_HI. Not used in practice.
+      - type: word
+        bits: 32
+      - type: word
+        bits: 32
+        name: hwf_desc_free
+        desc: Called QDMA_CSR_DBG_LMGR_STATUS, number of free hardware forwarding descriptors
+      - type: word
+        bits: 32
+        name: hwd_buf_used
+        desc: Number of bytes of buffer used for hardwre forwarding
+      - type: word
+        bits: 32
+        name: probe_lo
+        desc: Called QDMA_CSR_DBG_QDMA_PROBE_LO, unknown usage, TODO document
+      - type: word
+        bits: 32
+        name: probe_hi
+        desc: Called QDMA_CSR_DBG_QDMA_PROBE_HI, unknown usage, TODO document
 
   - type: struct
     name: rxring_size
@@ -241,7 +498,82 @@ fields:
     decl: struct qchain_regs qchain1;
 
   - type: word
-    name: end_word
-    offset: 0x18c
     bits: 32
+    name: cpu_rx_limit
+    desc: CPU protection RX limit, TODO document
+  - type: word
+    bits: 32
+    name: cpu_rx_limit_val
+    desc: CPU protection RX limit, TODO document
+
+  - type: opaque
+    bytes: 20
   
+  - type: word
+    bits: 32
+    name: vch_wrr
+    desc: Virtual channel WRR weighting, TODO document
+  - type: word
+    bits: 32
+    name: vch_qmode
+    desc: Virtual channel QoS mode (WRR / SP), TODO document
+
+  - type: opaque
+    bytes: 28
+
+  - type: word
+    bits: 32
+    name: ch_lim_en
+    desc: Per-channel rate-limit enable, each bit corriponds to one channel
+
+  - type: opaque
+    bytes: 28
+  
+  - type: opaque
+    bytes: 16
+    offset: 0x180
+    name: ch_qmode
+    desc: Per-channel queue prioritization mode (WRR / SP), TODO document
+  
+  - type: opaque
+    bytes: 112
+
+  - type: opaque
+    offset: 0x200
+    name: ch_tx_rate
+    desc: Channel data rate, each word corrisponds to 2 channels, upper 16 bits is the odd channel number, lower 16 is the even.
+    bytes: 64
+
+  - type: opaque
+    bytes: 64
+
+  - type: opaque
+    offset: 0x280
+    bytes: 32
+    name: ch_drop
+    desc: Drop counter for normal packets, each byte corrisponds to one of the 32 channels.
+  
+  - type: opaque
+    bytes: 32
+  
+  - type: opaque
+    offset: 0x2c0
+    bytes: 32
+    name: ch_dei_drop
+    desc: Drop counter for Drop-Elligable (DEI) packets, each byte corrisponds to one of the 32 channels.
+
+  - type: opaque
+    bytes: 32
+  
+  - type: opaque
+    offset: 0x300
+    bytes: 512
+    name: pkt_ctrs
+    desc: Every other word is a counter config and a counter value, called
+          QDMA_CSR_DBG_CNTR_CFG / QDMA_CSR_DBG_CNTR_VAR. Definitely 40 counters,
+          possible 64. TODO document
+
+  - type: opaque
+    offset: 0x500
+    bytes: 2816
+    # Rest of the page

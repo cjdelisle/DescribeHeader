@@ -218,7 +218,6 @@ fields:
     bits: 32
     name: stag_en
     desc: Add Special Tag on RX frames, 0 or 1
-    typedef: bool
   - type: struct
     name: rx_len_threshold
     short_name: len_th

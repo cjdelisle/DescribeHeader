@@ -6,7 +6,7 @@
 # For the driver. See: https://github.com/cjdelisle/econet_eth
 #
 type: struct
-name: qchain
+name: qchain_regs
 desc: QDMA Chain Registers
 fields:
   - type: word
