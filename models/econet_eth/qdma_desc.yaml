@@ -31,7 +31,7 @@ fields:
             desc: Packet has been dropped
           - name: nls
             bits: 1
-            desc: Unknown meaning but used on EN761627 and EN7580
+            desc: Not-Last-Segment, used for scattered-gather which is supported on EN761627 and EN7580.
           - desc: Reserved / unused, we still export the symbol so we can show it in debugging
             name: unknown1
             bits: 13
