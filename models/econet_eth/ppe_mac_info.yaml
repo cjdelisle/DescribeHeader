@@ -1,0 +1,50 @@
+# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+#
+# This is part of the EcoNet Ethernet driver
+# It the section of first metadata block of a PPE packet forwarding rule.
+# For the driver. See: https://github.com/cjdelisle/econet_eth
+#
+type: struct
+name: ppe_mac_info
+desc: EcoNet PPE MAC information block, used in l2bridge, ip4napt, ip4dslite,
+      and ip5route.
+fields:
+  - type: bitfield
+    bits: 32
+    fields:
+      - name: etype
+        bits: 16
+        desc: Ethertype of session traffic or DSA tag if DSA is in use
+      - name: vlan1
+        bits: 16
+        desc: Outermost VLAN tag to match on
+  - type: word
+    bits: 32
+    name: dmac_hi
+    desc: Destination MAC address to match on, upper bits
+    typedef: struct mac_hi
+  - type: bitfield
+    bits: 32
+    fields:
+      - name: dmac_lo
+        bits: 16
+        desc: Destination MAC address to match on, lower bits
+        typedef: struct mac_lo
+      - name: vlan2
+        bits: 16
+        desc: Inner VLAN tag to match on
+  - type: word
+    bits: 32
+    name: smac_hi
+    desc: Source MAC address to match on, upper bits
+    typedef: struct mac_hi
+  - type: bitfield
+    bits: 32
+    fields:
+      - name: smac_lo
+        bits: 16
+        desc: Source MAC address to match on, lower bits
+        typedef: struct mac_lo
+      - name: pppoe_id
+        bits: 16
+        desc: PPP identifier to match on if PPPoE in use

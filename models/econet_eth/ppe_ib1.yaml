@@ -1,0 +1,104 @@
+# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+#
+# This is part of the EcoNet Ethernet driver
+# It the section of first metadata block of a PPE packet forwarding rule.
+# For the driver. See: https://github.com/cjdelisle/econet_eth
+#
+type: union
+name: ppe_ib1
+desc: EcoNet PPE Info Block 1
+fields:
+  - type: bitfield
+    bits: 32
+    name: ppe_ib1_ud
+    short_name: ud
+    desc: Unbind and dynamic state sessions
+    fields:
+      - name: static
+        bits: 1
+        desc: Is the entry static
+      - name: udp
+        bits: 1
+        desc: Is the entry for UDP
+      - name: state
+        bits: 2
+        desc: The state of the rule
+        enum:
+          INVALID: 0
+          UNBIND: 1
+          BIND: 2
+          FIN: 3
+      - name: pkt_type
+        bits: 3
+        desc: The type of this rule
+        enum:
+          IPV4_HNAPT: 0
+          IPV4_ROUTE: 1
+          BRIDGE: 2
+          IPV4_DSLITE: 3
+          IPV6_ROUTE_3T: 4
+          IPV6_ROUTE_5T: 5
+          IPV6_6RD: 7
+      - name: prebind
+        bits: 1
+        desc: Enable pre-binding of rule, unknown exact meaning
+      - name: pkt_cnt
+        bits: 16
+        desc: Number of packets this rule matched
+      - name: timestamp
+        bits: 8
+        desc: Second counter when rule last used
+
+  - type: bitfield
+    bits: 32
+    name: ppe_ib1_bf
+    short_name: bf
+    desc: Bind and fin state sessions
+    fields:
+      - name: static
+        bits: 1
+        desc: Is the entry static
+      - name: udp
+        bits: 1
+        desc: Is the entry for UDP
+      - name: state
+        bits: 2
+        desc: The state of the rule
+        typedef: enum ppe_ib1_ud_state
+      - name: pkt_type
+        bits: 3
+        desc: The type of this rule
+        typedef: enum ppe_ib1_ud_pkt_type
+      - name: ttl
+        bits: 1
+        desc: Unknown meaning, maybe enforce TTL on packets
+      - name: rm_tun_hdr
+        bits: 1
+        desc: Remove tunnel IP header (6RD / DSLITE only)
+      - name: cacheable
+        bits: 1
+        desc: Unknown meaning, maybe PPE may cache rule
+      - name: vpm_tpid
+        bits: 2
+        desc: Set TPID on traffic based on this, either fixed, DSA tag, or reg val
+        enum:
+          FROM_STAG: 0
+          "8100": 1
+          "88a8": 2
+          FROM_REG: 3
+      - name: pppoe
+        bits: 1
+        desc: True if this session is PPPoE, pppoe_id is consulted
+      - name: vlan_layer
+        bits: 3
+        desc: 0 means no VLAN, 1 vlan2 is set, 2 vlan2 is also set, others unknown
+      - name: keepalive
+        bits: 1
+        desc: Unknown meaning
+      - name: time_stamp
+        bits: 15
+        desc: Time the rule was most recently matched, seconds
+  - type: word
+    name: bits
+    desc: U32 based representation of info-block 1
+    bits: 32
