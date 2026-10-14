@@ -1,0 +1,76 @@
+# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+#
+# This is part of the EcoNet Ethernet driver
+# It is the data structure of the IPv4 NAT rule in the packet processing engine.
+# for the driver. See: https://github.com/cjdelisle/econet_eth
+#
+type: struct
+name: ppe_ip4nat
+short_name: ip4nat
+desc: EcoNet PPE IPv4 NAT Rule, used when pkt_type = IPV4_HNAPT or IPV4_HNAT
+fields:
+  - type: word
+    name: ib1
+    desc: Info Block 1
+    typedef: struct ppe_ib1
+    bits: 32
+  - type: word
+    name: sip
+    desc: Source IP address to match on
+    bits: 32
+  - type: word
+    name: dip
+    desc: Dest IP address to match on
+    bits: 32
+  - type: bitfield
+    bits: 32
+    fields:
+      - name: sport
+        bits: 16
+        desc: The source port to match on, if TCP/UDP IPV4_HNAPT
+      - name: dport
+        bits: 16
+        desc: The destination port to match on, if TCP/UDP IPV4_HNAPT
+  - type: word
+    name: ib2
+    desc: Info Block 2
+    typedef: struct ppe_ib2
+    bits: 32
+  - type: word
+    name: new_sip
+    desc: Source IP address to rewrite to
+    bits: 32
+  - type: word
+    name: new_dip
+    desc: Dest IP address to rewrite to
+    bits: 32
+  - type: bitfield
+    bits: 32
+    fields:
+      - name: new_sport
+        bits: 16
+        desc: The source port to rewrite to, if TCP/UDP IPV4_HNAPT
+      - name: new_dport
+        bits: 16
+        desc: The destination port to rewrite to, if TCP/UDP IPV4_HNAPT
+  - type: opaque
+    bytes: 8
+    desc: reserved
+  - type: bitfield
+    bits: 32
+    fields:
+      - name: act_dp
+        bits: 8
+        desc: Port number passed on to the next layer (e.g. WOE wifi client number)
+      - name: ts_id
+        bits: 8
+        desc: Traffic shaper ID to tag on egress packets, used by xPON subsystem
+      - name: channel
+        bits: 8
+        desc: QDMA channel number to use for QoS
+      - bits: 8
+        desc: unused
+  - type: opaque
+    bytes: 20
+    name: mac_info
+    decl: struct ppe_mac_info

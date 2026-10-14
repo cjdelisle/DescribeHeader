@@ -30,10 +30,11 @@ fields:
           FIN: 3
       - name: pkt_type
         bits: 3
-        desc: The type of this rule
+        desc: The type of this rule, IPV4_HNAPT is a TCP/UDP NAT, HNAT is a protocol-agnostic IPv4
+              address rewrite rule for (e.g. GRE tunneling).
         enum:
           IPV4_HNAPT: 0
-          IPV4_ROUTE: 1
+          IPV4_HNAT: 1
           BRIDGE: 2
           IPV4_DSLITE: 3
           IPV6_ROUTE_3T: 4
