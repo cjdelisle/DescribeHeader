@@ -1,0 +1,42 @@
+# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+#
+# This is part of the EcoNet Ethernet driver
+# It the section of second metadata block of a PPE packet forwarding rule.
+# For the driver. See: https://github.com/cjdelisle/econet_eth
+#
+type: bitfield
+bits: 32
+name: ppe_ib2
+desc: EcoNet PPE Info Block 2
+fields:
+  - name: dscp
+    bits: 8
+    desc: Match traffic on this DSCP value
+  - name: port_ag
+    bits: 6
+    desc: Matching traffic will be counted on this accounting group
+  - name: port_mg
+    bits: 6
+    desc: Matching traffic will be counted on this metering group
+  - name: pre_account
+    bits: 1
+    desc: If set then use pre-accounting mode
+  - name: pre_meter
+    bits: 1
+    desc: If set then use pre-metering mode
+  - name: pcp
+    bits: 1
+    desc: Unknown meaning
+  - name: mcast_cpu
+    bits: 1
+    desc: Multicast received packets on this rule to the CPU
+  - name: dest_port
+    bits: 3
+    desc: Matched traffic will be sent to this eth subsystem
+    typedef: enum etx_fport
+  - name: qos
+    bits: 1
+    desc: Outgoing traffic matched on this rule will be send with queue number in qdma_desc_etx
+  - name: queue
+    bits: 4
+    desc: This queue to be placed in outgoing qdma_desc_etx if qos is set
