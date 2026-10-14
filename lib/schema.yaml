@@ -33,6 +33,9 @@ $defs:
         type: object
         additionalProperties:
           type: integer
+      typedef:
+        type: string
+        description: "If set, this will be the type used when making a structure"
     required: [bits]
     additionalProperties: false
 
@@ -216,3 +219,5 @@ $defs:
 # ======================================================
 oneOf:
   - $ref: "#/$defs/structField"
+  - $ref: "#/$defs/unionField"
+  - $ref: "#/$defs/bitField"
